@@ -3,8 +3,8 @@ use std::fs;
 use std::env;
 use colored::*;
 
-mod registry;
 mod install;
+mod uninstall;
 
 fn wait() {
     print!("ENTER >");
@@ -12,10 +12,11 @@ fn wait() {
     let _ = io::stdin().read_line(&mut String::new());
 }
 
-fn main() {
+fn main() -> io::Result<()> {
+    colored::control::set_override(true);
     let args: Vec<String> = env::args().collect();
 
-    if args.len() > 1 {
+    if args.len() > 1 { //BarLang
         let file_path: &String = &args[1];
 
         println!("{} {}", "Compiling".green(), file_path.green());
@@ -28,21 +29,38 @@ fn main() {
             eprintln!("Not BarLang File");
         }
         wait();
-        return;
-    } else {
-        let path: String = String::from("C:\\BarLang\\BarLang.exe");
+        Ok(())
+    } else { //Install BarLang
+        println!("BarLang Installer {}", env!("CARGO_PKG_VERSION"));
+        println!("1) Install BarLang");
+        println!("2) UnInstall BarLang");
+        loop {
+            print!("> ");
+            io::stdout().flush()?;
 
-        if let Err(e) = install::install(&path) {
-            eprintln!("{}", e);
-            return;
-        }
+            let mut input = String::new();
+            io::stdin().read_line(&mut input)?;
+            let choice = input.trim();
 
-        if let Err(e) = registry::register(&path) {
-            eprintln!("{}", e);
-            return;
+            match choice {
+                "1" => {
+                    if let Err(e) = install::install("C:\\BarLang\\BarLang.exe") {
+                        eprintln!("{}", e);
+                    }
+                    break;
+                },
+                "2" => {
+                    if let Err(e) = uninstall::uninstall("C:\\BarLang") {
+                        eprintln!("{}", e);
+                    }
+                    break;
+                },
+                _ => {}
+            }
         }
 
         wait();
+        Ok(())
     }
 }
 fn print_file_contents(file_path: &str) -> io::Result<()> {
